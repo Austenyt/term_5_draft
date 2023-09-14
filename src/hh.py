@@ -25,7 +25,7 @@ class HeadHunter(API_abstract):
         }
         response = requests.get(self.url, params)
         self.vacancies = response.json()['items']
-        return self.vacancies
+        # print(self.vacancies)
         # print(json.dumps(self.vacancies, indent=4, ensure_ascii=True))
 
     # def get_format_and_search_vacancies(self):
@@ -44,19 +44,25 @@ class HeadHunter(API_abstract):
     #     print(hh_emp_data)
 
     def get_format_and_search_vacancies(self):
-        # Получение информации о первых десяти работодателях из переменной vacancies
+        # Получение информации о работодателях из переменной self.vacancies без повторений
         hh_emp_data = []
+        seen_employers = set()  # Множество для отслеживания уже добавленных работодателей
 
         for vacancy in self.vacancies[:11]:
-            salary_info = vacancy.get('salary', {})
-            emp_info = {
-                'employer_name': vacancy['employer'].get('name', 'Не указано'),
-                'employer_id': vacancy['employer']['id'],
-                'vacancy_id': vacancy['id'],
-                'vacancy_name': vacancy['name'],
-                'vacancy_salary': vacancy.get('salary', {}).get('from') if salary_info else None,
-                'vacancy_link': vacancy['alternate_url']
-            }
-            hh_emp_data.append(emp_info)
+            employer_info = vacancy.get('employer', {})
+            employer_id = employer_info.get('id')
+            if employer_id not in seen_employers:
+                salary_info = vacancy.get('salary', {})
+                vacancy_salary = salary_info.get('from', 'Не указано') if salary_info else 'Не указано'
+                emp_info = {
+                    'employer_name': employer_info.get('name', 'Не указано'),
+                    'employer_id': employer_id,
+                    'vacancy_name': vacancy.get('name', 'Не указано'),
+                    'vacancy_id': vacancy.get('id', 'Не указано'),
+                    'vacancy_salary': vacancy_salary,
+                    'vacancy_link': vacancy.get('alternate_url', 'Не указано'),
+                }
+                hh_emp_data.append(emp_info)
+                seen_employers.add(employer_id)
 
         return hh_emp_data
